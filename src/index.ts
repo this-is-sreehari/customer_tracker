@@ -1,7 +1,14 @@
-import app from './app';
+import express from 'express';
 
-const port = process.env.PORT || 3000;
+import router from './routes';
 
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
-});
+
+const PORT = parseInt(process.env.PORT || '3000');
+
+const app = express();
+
+app.use(express.json());
+
+app.use('/identify', router);
+
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
