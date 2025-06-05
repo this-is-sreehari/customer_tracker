@@ -28,7 +28,7 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
         const { phoneNumber, email } = req.body;
         await checkForTable();
         const result = await addNewOrder(email, phoneNumber);
-        return res.status(201).json({
+        return res.status(200).json({
             contact: result
         });
     } catch (error) {
