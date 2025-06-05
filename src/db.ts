@@ -183,11 +183,34 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                             [firstRecordId, "secondary", ...allIds],
                             (error, results) => {
                                 if (error) return reject(error);
-                                return resolve(results);
+                                console.log('Record updated');
+                                connection.query(
+                                    `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
+                                    [firstRecordId, firstRecordId],
+                                    (error, results: any) => {
+                                        if (error) return reject(error);
+                                        const primaryContatctId: number = 
+                                            results[0].linkPrecedence == "primary" 
+                                                ? results[0].id
+                                                : results[0].linkedId;
+                                        getAllEmailIds(primaryContatctId).then((emails) => {
+                                            getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                                getAllSecondaryContacts(primaryContatctId).then((contacts) => {
+                                                    const data = {
+                                                        "primaryContatctId": primaryContatctId,
+                                                        "emails": emails,
+                                                        "phoneNumbers": numbers,
+                                                        "secondaryContactIds": contacts
+                                                    };
+                                                    return resolve(data);
+                                                })
+                                            });
+                                        });
+            
+                                    }
+                                )
                             }
                         );
-                        console.log('Record updated');
-                        return resolve(results);
                     }
                 );
             });
@@ -204,10 +227,33 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                     ) VALUES (?, ?, ?, ?)`,
                     [phoneNumber, email, linkedId, "secondary"],
                     (error, results) => {
-                        if (error) {                            
-                            return reject(error)};
+                        if (error) return reject(error);
                         console.log('Record inserted');
-                        return resolve(results);
+                        connection.query(
+                            `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
+                            [linkedId, linkedId],
+                            (error, results: any) => {
+                                if (error) return reject(error);
+                                const primaryContatctId: number = 
+                                    results[0].linkPrecedence == "primary" 
+                                        ? results[0].id
+                                        : results[0].linkedId;
+                                getAllEmailIds(primaryContatctId).then((emails) => {
+                                    getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                        getAllSecondaryContacts(primaryContatctId).then((contacts) => {
+                                            const data = {
+                                                "primaryContatctId": primaryContatctId,
+                                                "emails": emails,
+                                                "phoneNumbers": numbers,
+                                                "secondaryContactIds": contacts
+                                            };
+                                            return resolve(data);
+                                        })
+                                    });
+                                });
+    
+                            }
+                        )
                     }
                 )
             });
