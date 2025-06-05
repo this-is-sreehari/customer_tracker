@@ -1,3 +1,4 @@
+import { error } from 'console';
 import * as dotenv from 'dotenv';
 import mysql from 'mysql2';
 
@@ -112,72 +113,84 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
             connection.query(
                 `INSERT INTO ${tableName} (phoneNumber, email) VALUES (?, ?)`,
                 [phoneNumber, email],
-                (error, results) => {
+                (error, results: any) => {
                     if (error) return reject(error);
                     console.log('Record inserted');
-                    return resolve(results);
+                    connection.query(
+                        `SELECT * FROM ${tableName} WHERE id = ?`,
+                        [results.insertId],
+                        (error, results: any) => {
+                            if (error) return reject(error);
+                            const primaryContatctId: number = 
+                                results[0].linkPrecedence == "primary" 
+                                    ? results[0].id
+                                    : results[0].linkedId;
+                            getAllEmailIds(primaryContatctId).then((emails) => {
+                                getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                    getAllSecondaryContacts(primaryContatctId).then((contacts) => {
+                                        const data = {
+                                            "primaryContatctId": primaryContatctId,
+                                            "emails": emails,
+                                            "phoneNumbers": numbers,
+                                            "secondaryContactIds": contacts
+                                        };
+                                        return resolve(data);
+                                    })
+                                });
+                            });
+
+                        }
+                    )
                 }
             )
         });
     } else {
         if (matchingIds.length > 1) {
-            const getPrimaryRecord = (records: any[]) => {
-                return records.filter(record => record.precedence === 'primary');
-            };
-            const primaryRecords = getPrimaryRecord(matchingIds);
+ 
+            const records = matchingIds;                
             
-            if (primaryRecords.length == 1) {
+            const minObj = records.reduce((min: any, current: any) => {
+                return current.timeStamp < min.timeStamp ? current : min;
+            });
 
-                return new Promise((resolve, reject) => { 
-                    connection.query(
-                        `INSERT INTO ${tableName} (
-                            phoneNumber, email, linkedId, linkPrecedence
-                        ) VALUES (?, ?, ?, ?)`,
-                        [phoneNumber, email, primaryRecords[0].id, "secondary"],
-                        (error, results) => {
-                            if (error) return reject(error);
-                            console.log('Record inserted');
-                            return resolve(results);
-                        }
-                    )
-                });
-            } else {
-                const records = primaryRecords.length > 0 ? primaryRecords : matchingIds;                
+            const firstRecordId = minObj.precedence == "primary" ? minObj.id : minObj.linkedId;
+            
+            type RecordType = {
+                id: number;
+                linkedId: number | null;
+                precedence: 'primary' | 'secondary';
+                timeStamp: Date;
+            };
                 
-                const maxObj = records.reduce((max: any, current: any) => {
-                    return current.timeStamp > max.timeStamp ? current : max;
-                });
-                const minObj = records.reduce((min: any, current: any) => {
-                    return current.timeStamp < min.timeStamp ? current : min;
-                });
+            const allIds = records.filter(
+                (record: RecordType) => record.id !== firstRecordId)  
+                .map((record: RecordType) => record.id
+            )
+            const placeholders = allIds.map(() => '?').join(',');
 
-                const newRecordId = maxObj.id;
-                const firstrecordId = primaryRecords.length > 0 ? minObj.id : minObj.linkedId;
-                
-                return new Promise((resolve, reject) => { 
-                    connection.query(
-                        `UPDATE ${tableName} SET 
-                            linkedId = ?, linkPrecedence = ?,
-                            updatedAt = NOW() WHERE id = ?`,
-                        [firstrecordId, "secondary", newRecordId],
-                        (error, results) => {
-                            if (error) return reject(error);
-                            connection.query(
-                                `UPDATE ${tableName} SET 
-                                    linkedId = ?, linkPrecedence = ?,
-                                    updatedAt = NOW() WHERE linkedId = ?`,
-                                [firstrecordId, "secondary", newRecordId],
-                                (error, results) => {
-                                    if (error) return reject(error);
-                                    return resolve(results);
-                                }
-                            );
-                            console.log('Record updated');
-                            return resolve(results);
-                        }
-                    );
-                });
-            }        
+            return new Promise((resolve, reject) => { 
+                connection.query(
+                    `UPDATE ${tableName} SET 
+                        linkedId = ?, linkPrecedence = ?,
+                        updatedAt = NOW() WHERE id IN (${placeholders})`,
+                    [firstRecordId, "secondary", ...allIds],
+                    (error, results) => {
+                        if (error) return reject(error);
+                        connection.query(
+                            `UPDATE ${tableName} SET 
+                                linkedId = ?, linkPrecedence = ?,
+                                updatedAt = NOW() WHERE linkedId = (${placeholders})`,
+                            [firstRecordId, "secondary", ...allIds],
+                            (error, results) => {
+                                if (error) return reject(error);
+                                return resolve(results);
+                            }
+                        );
+                        console.log('Record updated');
+                        return resolve(results);
+                    }
+                );
+            });
         } else if (matchingIds.length == 1) {
 
             const linkedId = matchingIds[0].precedence === "primary" 
@@ -201,5 +214,59 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
         } 
     }
 }
+
+
+export const getAllEmailIds = async (id: number): Promise<any> => {
+    const emailIds: any = [];
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
+            [id, id],
+            (error, results: any[]) => {
+                if (error) return reject(error);
+                for (const item of results) {
+                    emailIds.push(item.email);
+                }
+                return resolve(emailIds);
+            }
+        );
+    })
+}
+
+
+export const getAllPhoneNumbers = async (id: number): Promise<any> => {
+    const numbers: any = [];
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
+            [id, id],
+            (error, results: any[]) => {
+                if (error) return reject(error);
+                for (const item of results) {
+                    numbers.push(item.phoneNumber);
+                }
+                return resolve(numbers);
+            }
+        );
+    })
+} 
+
+
+export const getAllSecondaryContacts = async (id: number): Promise<any> => {
+    const contacts: any = [];
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT * FROM ${tableName} WHERE linkedId = ?`,
+            [id],
+            (error, results: any[]) => {
+                if (error) return reject(error);
+                for (const item of results) {
+                    contacts.push(item.id);
+                }
+                return resolve(contacts);
+            }
+        );
+    })
+} 
 
 export default { checkForTable, addNewOrder, getAllOrders };

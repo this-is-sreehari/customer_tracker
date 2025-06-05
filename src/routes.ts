@@ -29,7 +29,7 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
         await checkForTable();
         const result = await addNewOrder(email, phoneNumber);
         return res.status(201).json({
-            data: result
+            contact: result
         });
     } catch (error) {
         return res.status(500).json({
