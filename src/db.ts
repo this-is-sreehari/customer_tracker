@@ -172,52 +172,95 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
             )
             const placeholders = allIds.map(() => '?').join(',');
 
-            return new Promise((resolve, reject) => { 
-                connection.query(
-                    `UPDATE ${tableName} SET 
-                        linkedId = ?, linkPrecedence = ?,
-                        updatedAt = NOW() WHERE id IN (${placeholders})`,
-                    [firstRecordId, "secondary", ...allIds],
-                    (error, results) => {
-                        if (error) return reject(error);
-                        connection.query(
-                            `UPDATE ${tableName} SET 
-                                linkedId = ?, linkPrecedence = ?,
-                                updatedAt = NOW() WHERE linkedId IN (${placeholders})`,
-                            [firstRecordId, "secondary", ...allIds],
-                            (error, results) => {
-                                if (error) return reject(error);
-                                console.log('Record updated');
-                                connection.query(
-                                    `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
-                                    [firstRecordId, firstRecordId],
-                                    (error, results: any) => {
-                                        if (error) return reject(error);
-                                        const primaryContatctId: number = 
-                                            results[0].linkPrecedence == "primary" 
-                                                ? results[0].id
-                                                : results[0].linkedId;
-                                        getAllEmailIds(primaryContatctId).then((emails) => {
-                                            getAllPhoneNumbers(primaryContatctId).then((numbers) => {
-                                                getAllSecondaryContacts(primaryContatctId).then((contacts) => {
-                                                    const data = {
-                                                        "primaryContatctId": primaryContatctId,
-                                                        "emails": emails,
-                                                        "phoneNumbers": numbers,
-                                                        "secondaryContactIds": contacts
-                                                    };
-                                                    return resolve(data);
-                                                })
+            const status = await bothEmailAndNumberExists(email, phoneNumber);
+
+            // update the record if both the email and phone number is present in db
+            if (status) {
+                return new Promise((resolve, reject) => {
+                    connection.query(
+                        `UPDATE ${tableName} SET 
+                            linkedId = ?, linkPrecedence = ?,
+                            updatedAt = NOW() WHERE id IN (${placeholders})`,
+                        [firstRecordId, "secondary", ...allIds],
+                        (error, results) => {
+                            if (error) return reject(error);
+                            connection.query(
+                                `UPDATE ${tableName} SET 
+                                    linkedId = ?, linkPrecedence = ?,
+                                    updatedAt = NOW() WHERE linkedId IN (${placeholders})`,
+                                [firstRecordId, "secondary", ...allIds],
+                                (error, results) => {
+                                    if (error) return reject(error);
+                                    console.log('Record updated');
+    
+                                    connection.query(
+                                        `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
+                                        [firstRecordId, firstRecordId],
+                                        (error, results: any) => {
+                                            if (error) return reject(error);
+                                            const primaryContatctId: number = 
+                                                results[0].linkPrecedence == "primary" 
+                                                    ? results[0].id
+                                                    : results[0].linkedId;
+                                            getAllEmailIds(primaryContatctId).then((emails) => {
+                                                getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                                    getAllSecondaryContacts(primaryContatctId).then((contacts) => {
+                                                        const data = {
+                                                            "primaryContatctId": primaryContatctId,
+                                                            "emails": emails,
+                                                            "phoneNumbers": numbers,
+                                                            "secondaryContactIds": contacts
+                                                        };
+                                                        return resolve(data);
+                                                    })
+                                                });
                                             });
+                                        }
+                                    )
+                                }
+                            );
+                        }
+                    );
+                });
+
+            } else {
+                // if only email or only phone number or neither exists, then create new record
+                return new Promise((resolve, reject) => {
+                    connection.query(
+                        `INSERT INTO ${tableName} (
+                            phoneNumber, email, linkedId, linkPrecedence
+                        ) VALUES (?, ?, ?, ?)`,
+                        [phoneNumber, email, firstRecordId, "secondary"],
+                        (error, results) => {
+                            if (error) return reject(error);
+                            connection.query(
+                                `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
+                                [firstRecordId, firstRecordId],
+                                (error, results: any) => {
+                                    if (error) return reject(error);
+                                    const primaryContatctId: number = 
+                                        results[0].linkPrecedence == "primary" 
+                                            ? results[0].id
+                                            : results[0].linkedId;
+                                    getAllEmailIds(primaryContatctId).then((emails) => {
+                                        getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                            getAllSecondaryContacts(primaryContatctId).then((contacts) => {
+                                                const data = {
+                                                    "primaryContatctId": primaryContatctId,
+                                                    "emails": emails,
+                                                    "phoneNumbers": numbers,
+                                                    "secondaryContactIds": contacts
+                                                };
+                                                return resolve(data);
+                                            })
                                         });
-            
-                                    }
-                                )
-                            }
-                        );
-                    }
-                );
-            });
+                                    });
+                                }
+                            )
+                        }
+                    );
+                });
+            }
         } else if (matchingIds.length == 1) {
 
             const linkedId = matchingIds[0].precedence === "primary" 
@@ -255,7 +298,6 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                                         })
                                     });
                                 });
-    
                             }
                         )
                     }
@@ -320,5 +362,35 @@ export const getAllSecondaryContacts = async (id: number): Promise<any> => {
         );
     })
 } 
+
+
+export const bothEmailAndNumberExists = async (email: string, phone: string): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT * FROM ${tableName} WHERE email = ?`,
+            [email],
+            (error, results: any[]) => {
+                if (error) return reject(error);
+                if (results.length > 0) {
+                    connection.query(
+                        `SELECT * FROM ${tableName} WHERE phoneNumber = ?`,
+                        [phone],
+                        (error, results: any) => {
+                            if (error) return reject(error);
+                            if (results.length > 0) {
+                                return resolve(true);
+                            } else {
+                                return resolve(false);
+                            }
+                        }
+                    )
+                } else {
+                    return resolve(false);
+                }
+            }
+        );
+    })
+} 
+
 
 export default { checkForTable, addNewOrder, getAllOrders };
