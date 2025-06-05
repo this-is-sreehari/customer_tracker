@@ -1,6 +1,6 @@
-import { error } from 'console';
 import * as dotenv from 'dotenv';
 import mysql from 'mysql2';
+import fs from 'node:fs';
 
 
 dotenv.config();
@@ -8,10 +8,13 @@ dotenv.config();
 // database connection
 const connection = mysql.createConnection({
     host: process.env.DATABASE_HOST,
-    // port: parseInt(process.env.DATABASE_PORT || '3306'),
+    port: parseInt(process.env.DATABASE_PORT || '3306'),
     user: process.env.DATABASE_USERNAME,
     password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE
+    database: process.env.DATABASE,
+    ssl: {
+        ca: fs.readFileSync(__dirname + '/certs/ca.pem'),
+    }
 });
 
 connection.connect((err) => {
@@ -49,7 +52,7 @@ export const checkForTable = async (): Promise<void> => {
                         phoneNumber VARCHAR(15),
                         email VARCHAR(255),
                         linkedId INT,
-                        linkPrecedence ENUM("primary", "secondary") NOT NULL,
+                        linkPrecedence ENUM('primary', 'secondary') NOT NULL,
                         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                         deletedAt TIMESTAMP NULL
