@@ -33,7 +33,7 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
         });
     } catch (error) {
         return res.status(500).json({
-            message: 'Error inserting recordss',
+            message: 'Error inserting record',
             error: error
         })
     }

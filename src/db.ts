@@ -83,6 +83,7 @@ export const getAllOrders = async (): Promise<any> => {
 // insert the incoming values in the table
 export const addNewOrder = async (email: string, phoneNumber: string): Promise<any> => {
 
+    // get all records having data similar to data from request
     const matchingIds = await new Promise<any>((resolve, reject) => {
         connection.query(
             `SELECT * FROM ${tableName}`,
@@ -108,6 +109,7 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
         );            
     });
     
+    // for new records
     if (!matchingIds) {
         return new Promise((resolve, reject) => { 
             connection.query(
@@ -145,6 +147,8 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
             )
         });
     } else {
+
+        // handles the case where more than one matching record is present
         if (matchingIds.length > 1) {
  
             const records = matchingIds;                
