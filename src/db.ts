@@ -183,7 +183,7 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                         connection.query(
                             `UPDATE ${tableName} SET 
                                 linkedId = ?, linkPrecedence = ?,
-                                updatedAt = NOW() WHERE linkedId = (${placeholders})`,
+                                updatedAt = NOW() WHERE linkedId IN (${placeholders})`,
                             [firstRecordId, "secondary", ...allIds],
                             (error, results) => {
                                 if (error) return reject(error);
@@ -277,7 +277,8 @@ export const getAllEmailIds = async (id: number): Promise<any> => {
                 for (const item of results) {
                     emailIds.push(item.email);
                 }
-                return resolve(emailIds);
+                const filteredEmailIds = [...new Set(emailIds)]
+                return resolve(filteredEmailIds);
             }
         );
     })
@@ -295,7 +296,8 @@ export const getAllPhoneNumbers = async (id: number): Promise<any> => {
                 for (const item of results) {
                     numbers.push(item.phoneNumber);
                 }
-                return resolve(numbers);
+                const filteredPhoneNumbers = [...new Set(numbers)]
+                return resolve(filteredPhoneNumbers);
             }
         );
     })
