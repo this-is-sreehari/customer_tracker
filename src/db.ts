@@ -336,7 +336,7 @@ export const getAllEmailIds = async (id: number): Promise<any> => {
             (error, results: any[]) => {
                 if (error) return reject(error);
                 for (const item of results) {
-                    emailIds.push(item.email);
+                    if (item.email != null) emailIds.push(item.email);
                 }
                 const filteredEmailIds = [...new Set(emailIds)]
                 return resolve(filteredEmailIds);
@@ -354,8 +354,8 @@ export const getAllPhoneNumbers = async (id: number): Promise<any> => {
             [id, id],
             (error, results: any[]) => {
                 if (error) return reject(error);
-                for (const item of results) {
-                    numbers.push(item.phoneNumber);
+                for (const item of results) {         
+                    if (item.phoneNumber != null) numbers.push(item.phoneNumber);
                 }
                 const filteredPhoneNumbers = [...new Set(numbers)]
                 return resolve(filteredPhoneNumbers);
