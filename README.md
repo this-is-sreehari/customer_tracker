@@ -3,11 +3,13 @@
 Track purchase history of similar customers and group them together.
 
 ## API Documentation
-- The URL is `https://customer-tracker.onrender.com/identify`.
-> **Note**: The URL will take few seconds to load on first try as the host 'render' will spun down the service after 15 minutes of inactivity, as it being a free service.
-- The `/identify` is the primary endpoint and can receive both `GET` and `POST` requests.
+- The API is accessible at: `https://customer-tracker.onrender.com/identify`.
+> **Note**: The API may take a few seconds to respond on the first request, as the host Render will put the service to sleep after 15 minutes of inactivity (free plan limitation).
+- The `/identify` endpoint supports HTTP `GET` and `POST` requests.
+- Additionally, there is an HTTP `DELETE` endpoint with the format  `/identify/{id}`
 - Add `Content-Type: application/json` to headers for sending `JSON` in request body. 
-- An example of a sample request body is given below.
+- Returns `200 OK` for successful `GET` and `POST` requests, and `204 No Content` for successful `DELETE` requests.
+- A sample request body is shown below.
 
 ```
 {
@@ -16,8 +18,8 @@ Track purchase history of similar customers and group them together.
 }
 ```
 >Both email and phoneNumber fields are of type String and can be null.
-- Returns `200 OK` as status for successful  `GET` and `POST` requests.
-- An example of a sample response body is given below.
+
+- A sample response body is shown below.
 ```
 {
     "contact": {
@@ -30,8 +32,8 @@ Track purchase history of similar customers and group them together.
 ```
 ## Tech Stack Used
 
-- NodeJS + ExpressJS + TypeScript is used for backend service.
-- MySQL is used as the Database.
+- NodeJS with ExpressJS and TypeScript for the backend service.
+- MySQL as the Database.
 - API hosted on **Render.com**.
 - Database hosted on **Aiven.io**.
 
