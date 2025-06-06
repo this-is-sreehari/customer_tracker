@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 
-import { checkForTable, addNewOrder, getAllOrders } from './db';
+import { checkForTable, addNewOrder, getAllOrders, deleteOrder } from './db';
 
 
 const router = Router();
@@ -38,5 +38,24 @@ router.post('/', async (req: Request, res: Response): Promise<any> => {
         })
     }
 });
+
+
+router.delete('/:id', async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const result = await deleteOrder(parseInt(id));
+        if (result) return res.status(204).json();
+        return res.status(404).json({
+            message: 'Record does not exist'
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: 'Error deleting record',
+            error: error
+        });
+    }
+});
+
 
 export default router;

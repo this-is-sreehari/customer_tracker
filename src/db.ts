@@ -312,6 +312,21 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
 }
 
 
+export const deleteOrder = async (id: number): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `DELETE FROM ${tableName} WHERE id = ?`,
+            [id],
+            (error, results: any) => {
+                if (error) return reject(error);
+                if (results.affectedRows == 1) return resolve(true);
+                return resolve(false);
+            }
+        )
+    });
+}
+
+
 export const getAllEmailIds = async (id: number): Promise<any> => {
     const emailIds: any = [];
     return new Promise((resolve, reject) => {
@@ -397,4 +412,4 @@ export const bothEmailAndNumberExists = async (email: string, phone: string): Pr
 } 
 
 
-export default { checkForTable, addNewOrder, getAllOrders };
+export default { checkForTable, addNewOrder, getAllOrders, deleteOrder };
