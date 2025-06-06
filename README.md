@@ -4,6 +4,7 @@ Track purchase history of similar customers and group them together.
 
 ## API Documentation
 - The URL is `https://customer-tracker.onrender.com/identify`.
+> **Note**: The URL will take few seconds to load on first try as the host 'render' will spun down the service after 15 minutes of inactivity, as it being a free service.
 - The `/identify` is the primary endpoint and can receive both `GET` and `POST` requests.
 - Add `Content-Type: application/json` to headers for sending `JSON` in request body. 
 - An example of a sample request body is given below.
