@@ -29,6 +29,13 @@ connection.connect((err) => {
 
 const tableName = "Contact";
 
+
+enum FieldType {
+    email,
+    phoneNumber
+}
+
+
 // to check if the table exists or create if it doesn't 
 export const checkForTable = async (): Promise<void> => {
     
@@ -131,8 +138,8 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                                 results[0].linkPrecedence == "primary" 
                                     ? results[0].id
                                     : results[0].linkedId;
-                            getAllEmailIds(primaryContatctId).then((emails) => {
-                                getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                            getFieldData(primaryContatctId, FieldType.email) .then((emails) => {
+                                getFieldData(primaryContatctId, FieldType.phoneNumber) .then((numbers) => {
                                     getAllSecondaryContacts(primaryContatctId).then((contacts) => {
                                         const data = {
                                             "primaryContatctId": primaryContatctId,
@@ -206,8 +213,8 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                                                 results[0].linkPrecedence == "primary" 
                                                     ? results[0].id
                                                     : results[0].linkedId;
-                                            getAllEmailIds(primaryContatctId).then((emails) => {
-                                                getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                            getFieldData(primaryContatctId, FieldType.email) .then((emails) => {
+                                                getFieldData(primaryContatctId, FieldType.phoneNumber) .then((numbers) => {
                                                     getAllSecondaryContacts(primaryContatctId).then((contacts) => {
                                                         const data = {
                                                             "primaryContatctId": primaryContatctId,
@@ -246,8 +253,8 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                                         results[0].linkPrecedence == "primary" 
                                             ? results[0].id
                                             : results[0].linkedId;
-                                    getAllEmailIds(primaryContatctId).then((emails) => {
-                                        getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                    getFieldData(primaryContatctId, FieldType.email) .then((emails) => {
+                                        getFieldData(primaryContatctId, FieldType.phoneNumber) .then((numbers) => {
                                             getAllSecondaryContacts(primaryContatctId).then((contacts) => {
                                                 const data = {
                                                     "primaryContatctId": primaryContatctId,
@@ -289,8 +296,8 @@ export const addNewOrder = async (email: string, phoneNumber: string): Promise<a
                                     results[0].linkPrecedence == "primary" 
                                         ? results[0].id
                                         : results[0].linkedId;
-                                getAllEmailIds(primaryContatctId).then((emails) => {
-                                    getAllPhoneNumbers(primaryContatctId).then((numbers) => {
+                                getFieldData(primaryContatctId, FieldType.email) .then((emails) => {
+                                    getFieldData(primaryContatctId, FieldType.phoneNumber) .then((numbers) => {
                                         getAllSecondaryContacts(primaryContatctId).then((contacts) => {
                                             const data = {
                                                 "primaryContatctId": primaryContatctId,
@@ -327,8 +334,8 @@ export const deleteOrder = async (id: number): Promise<boolean> => {
 }
 
 
-export const getAllEmailIds = async (id: number): Promise<any> => {
-    const emailIds: any = [];
+export const getFieldData = async (id: number, type: FieldType): Promise<any> => {
+    const data: any = [];
     return new Promise((resolve, reject) => {
         connection.query(
             `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
@@ -336,33 +343,18 @@ export const getAllEmailIds = async (id: number): Promise<any> => {
             (error, results: any[]) => {
                 if (error) return reject(error);
                 for (const item of results) {
-                    if (item.email != null) emailIds.push(item.email);
+                    if (type == FieldType.email) {
+                        if (item.email != null) data.push(item.email);
+                    } else {
+                        if (item.phoneNumber != null) data.push(item.phoneNumber);
+                    }
                 }
-                const filteredEmailIds = [...new Set(emailIds)]
-                return resolve(filteredEmailIds);
+                const filteredData = [...new Set(data)]
+                return resolve(filteredData);
             }
-        );
-    })
+        )
+    });
 }
-
-
-export const getAllPhoneNumbers = async (id: number): Promise<any> => {
-    const numbers: any = [];
-    return new Promise((resolve, reject) => {
-        connection.query(
-            `SELECT * FROM ${tableName} WHERE id = ? or linkedId = ?`,
-            [id, id],
-            (error, results: any[]) => {
-                if (error) return reject(error);
-                for (const item of results) {         
-                    if (item.phoneNumber != null) numbers.push(item.phoneNumber);
-                }
-                const filteredPhoneNumbers = [...new Set(numbers)]
-                return resolve(filteredPhoneNumbers);
-            }
-        );
-    })
-} 
 
 
 export const getAllSecondaryContacts = async (id: number): Promise<any> => {
