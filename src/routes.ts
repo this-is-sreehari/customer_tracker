@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 
-import { checkForTable, addNewOrder, getAllOrders, deleteOrder } from './db';
+import { checkForTable, addNewOrder, getAllOrders, deleteOrder } from './orders';
 
 
 const router = Router();

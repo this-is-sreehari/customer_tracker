@@ -11,4 +11,4 @@ app.use(express.json());
 
 app.use('/identify', router);
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`App started successfully and is listening on port ${PORT}`));
