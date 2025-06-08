@@ -1,6 +1,6 @@
 import express from 'express';
 
-import router from './routes';
+import router from './routes/orders.routes';
 
 
 const PORT = parseInt(process.env.PORT || '3000');
