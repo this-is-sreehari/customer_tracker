@@ -76,4 +76,50 @@ export const bothEmailAndNumberExists = async (email: string, phone: string): Pr
     })
 }
 
-export default { FieldType, getFieldData, getAllSecondaryContacts, bothEmailAndNumberExists }
+
+// to check if the table exists or create if it doesn't 
+export const checkForTable = async (): Promise<void> => {
+    
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT COUNT(*) AS table_exists 
+                FROM information_schema.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = '${tableName}'`, 
+            (error, results: any) => {
+                if (error) return reject(error);
+                
+                const exists = results[0].table_exists > 0
+                if (exists) {
+                    console.log('Table already exists');
+                    return resolve();
+                }
+
+                connection.query(
+                    `CREATE TABLE ${tableName} (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        phoneNumber VARCHAR(15),
+                        email VARCHAR(255),
+                        linkedId INT,
+                        linkPrecedence ENUM('primary', 'secondary') NOT NULL,
+                        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                        deletedAt TIMESTAMP NULL
+                    )`,
+                    (error, _) => {
+                        if (error) return reject(error);
+                        console.log(`Table "${tableName}" created`);
+                        return resolve();
+                    }
+                );
+        });
+    });
+}
+
+export default { 
+    FieldType, 
+    getFieldData, 
+    getAllSecondaryContacts, 
+    bothEmailAndNumberExists, 
+    checkForTable
+}
