@@ -12,7 +12,7 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
         await checkForTable();
         const result = await getAllOrders();
         return res.status(200).json({
-            status: result
+            data: result
         });        
     } catch (error) {
         console.log(error);
@@ -26,7 +26,18 @@ router.get('/', async (req: Request, res: Response): Promise<any> => {
 
 router.post('/', async (req: Request, res: Response): Promise<any> => {
     try {
-        const { phoneNumber, email } = req.body;
+        let { phoneNumber, email } = req.body;
+
+        const nullStr: string = 'null';
+        if (email == nullStr || email == nullStr.toUpperCase()) email = null;
+        if (phoneNumber == nullStr || phoneNumber == nullStr.toUpperCase()) phoneNumber = null;
+        
+        if (!email && !phoneNumber)
+            return res.status(400).json({
+                error: 'Invalid request body',
+                message: 'Both email & phoneNumber fields cannot be null at the same time. Provide at least one of them'
+            });
+        
         await checkForTable();
         const result = await addNewOrder(email, phoneNumber);
         return res.status(200).json({
